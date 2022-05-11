@@ -1,0 +1,22 @@
+```{r}
+library('lubridate')
+library('tidyverse')
+hopland_full = read.csv('hopland_05052022.csv')
+hopland = data.frame(
+  'time' = hopland_full$Time,
+  'temperature' = hopland_full$Temperature
+)
+isolates = c('HA19','HA14','HA57','HA20','HA33','HB15','HA54','HA36','HB09','HD25')
+baseline = select(hopland_full, 'BLNK') %>% rowMeans()
+for (i in isolates){
+  comp = select(hopland_full, contains(i)) %>% rowMeans()
+  hopland[i] = comp - baseline
+}
+time = hms(hopland$time)
+hopland$time = hour(time) + minute(time)/60
+```
+
+```{r}
+hopland.melt = pivot_longer(hopland[-2], cols = starts_with('H'), names_to = 'isolate', values_to = 'OD') #remove temperature for now
+ggplot(hopland.melt, aes(x = time, y = OD)) + geom_smooth(se = F) + facet_wrap(~isolate)
+```
